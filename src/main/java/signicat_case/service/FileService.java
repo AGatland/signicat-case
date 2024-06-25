@@ -3,11 +3,13 @@ package signicat_case.service;
 import java.io.IOException;
 import java.time.LocalDate;
 
+import org.apache.coyote.BadRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import signicat_case.util.FileArchiver;
+import signicat_case.util.FileValidator;
 import signicat_case.model.UsageStatistic;
 import signicat_case.repository.UsageStatisticRepository;
 
@@ -20,12 +22,18 @@ public class FileService {
     @Autowired
     FileArchiver fileArchiver;
 
+    @Autowired
+    FileValidator fileValidator;
+
     public String testConnection() {
         return "Working";
     }
 
     public byte[] processFilesForZipping(MultipartFile[] files, String ipAddress) throws IOException {
         // TODO: Validate files either here or while archiving
+        if (!fileValidator.isFilesValid(files)) {
+            throw new BadRequestException();
+        }
 
         // Archive files
         byte[] zipFileBytes = fileArchiver.archiveFiles(files);
