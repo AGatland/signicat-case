@@ -36,7 +36,7 @@ public class FileController {
                 .body(zipFileBytes);
         } catch (Exception e) {
             System.out.println(e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error processing files");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error zipping files");
         }
     }
 }
