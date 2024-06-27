@@ -3,9 +3,13 @@ package signicat_case.controller;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase.Replace;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.annotation.DirtiesContext.ClassMode;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -29,6 +33,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+// Source: https://stackoverflow.com/questions/34617152/how-to-re-create-database-before-each-test-in-spring
+@DirtiesContext(classMode = ClassMode.AFTER_EACH_TEST_METHOD)
+@AutoConfigureTestDatabase(replace = Replace.ANY)
 public class FileControllerTests {
 
     @Autowired
@@ -43,7 +50,7 @@ public class FileControllerTests {
         usageStatisticRepository.deleteAll();
     }
 
-    // https://www.baeldung.com/spring-multipart-post-request-test
+    // Source: https://www.baeldung.com/spring-multipart-post-request-test
     @Test
     public void testFileZip_success() throws Exception {
         // Set up Mock data
@@ -68,6 +75,37 @@ public class FileControllerTests {
         assertEquals(expectedUsageStatistic.getIpAddress(), usageStatistic.getIpAddress());
         assertEquals(expectedUsageStatistic.getUsageCount(), usageStatistic.getUsageCount());
         assertEquals(expectedUsageStatistic.getDate(), usageStatistic.getDate());
+    }
+
+    @Test
+    public void testFileZip_multiReqCheckUsageCount() throws Exception {
+        // Set up Mock data
+        MockMultipartFile file = new MockMultipartFile("files", "file1.txt", "text/plain", "content".getBytes());
+
+        // Mock request endpoint 1
+        mockMvc.perform(multipart("/file/zip")
+                .file(file))
+                .andExpect(status().isOk());
+
+        // Mock request endpoint 2
+        mockMvc.perform(multipart("/file/zip")
+                .file(file))
+                .andExpect(status().isOk());
+
+        // Mock request endpoint 3
+        mockMvc.perform(multipart("/file/zip")
+                .file(file))
+                .andExpect(status().isOk());
+
+        // Fetch the entry from the database
+        Optional<UsageStatistic> optionalUsageStatistic = usageStatisticRepository.findById(1);
+
+        // Check that the entry exists
+        assertTrue(optionalUsageStatistic.isPresent(), "UsageStatistic should be present in the database");
+
+        // Verify that the retrieved entry matches the expected value
+        UsageStatistic expectedUsageStatistic = optionalUsageStatistic.get();
+        assertEquals(expectedUsageStatistic.getUsageCount(), 3);
     }
 
     @Test
