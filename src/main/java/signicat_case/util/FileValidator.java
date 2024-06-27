@@ -15,6 +15,9 @@ public class FileValidator {
     }
 
     public boolean isFilesValid(MultipartFile[] files) {
+        if (files == null || files.length == 0 || files[0].isEmpty()) {
+            throw new FileValidationException("No files found.");
+        }
         for (MultipartFile file : files) {
             isFileValid(file);
         }
