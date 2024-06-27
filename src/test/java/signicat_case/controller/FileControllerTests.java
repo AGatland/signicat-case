@@ -18,16 +18,14 @@ import signicat_case.model.UsageStatistic;
 import signicat_case.repository.UsageStatisticRepository;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Optional;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
-import java.util.zip.ZipOutputStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -117,15 +115,41 @@ public class FileControllerTests {
 
     @Test
     public void testFileZip_emptyFile() throws Exception {
+        MockMultipartFile normalFile = new MockMultipartFile("files", "emptyFile.txt", "text/plain", "content".getBytes());
         byte[] emptyContent = new byte[0]; // 0 byte (empty) file
-        MockMultipartFile largeFile = new MockMultipartFile("files", "emptyFile.txt", "text/plain", emptyContent);
+        MockMultipartFile emptyFile = new MockMultipartFile("files", "emptyFile.txt", "text/plain", emptyContent);
 
         MvcResult result = mockMvc.perform(multipart("/file/zip")
-                .file(largeFile))
+                .file(normalFile)
+                .file(emptyFile))
                 .andExpect(status().isBadRequest())
                 .andReturn();
 
         String response = result.getResponse().getContentAsString();
         assertEquals("File \"emptyFile.txt\" is not valid.", response);
+    }
+
+    @Test
+    public void testFileZip_noFilesField() throws Exception {
+
+        MvcResult result = mockMvc.perform(post("/file/zip"))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String response = result.getResponse().getContentAsString();
+        assertEquals("Problem with uploaded files: Current request is not a multipart request", response);
+    }
+
+    @Test
+    public void testFileZip_filesFieldButNoFiles() throws Exception {
+        MockMultipartFile emptyFile = new MockMultipartFile("files", "", "multipart/form-data", new byte[0]);
+    
+        MvcResult result = mockMvc.perform(multipart("/file/zip")
+                .file(emptyFile))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+    
+        String response = result.getResponse().getContentAsString();
+        assertEquals("No files found.", response);
     }
 }
