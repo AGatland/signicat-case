@@ -8,6 +8,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 
 import signicat_case.model.UsageStatistic;
 import signicat_case.repository.UsageStatisticRepository;
@@ -67,6 +68,20 @@ public class FileControllerTests {
         assertEquals(expectedUsageStatistic.getIpAddress(), usageStatistic.getIpAddress());
         assertEquals(expectedUsageStatistic.getUsageCount(), usageStatistic.getUsageCount());
         assertEquals(expectedUsageStatistic.getDate(), usageStatistic.getDate());
+    }
+
+    @Test
+    public void testFileZip_emptyFile() throws Exception {
+        byte[] emptyContent = new byte[0]; // 0 byte (empty) file
+        MockMultipartFile largeFile = new MockMultipartFile("files", "emptyFile.txt", "text/plain", emptyContent);
+
+        MvcResult result = mockMvc.perform(multipart("/file/zip")
+                .file(largeFile))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        String response = result.getResponse().getContentAsString();
+        assertEquals("File \"emptyFile.txt\" is not valid.", response);
     }
     
     public static byte[] createMockZip() throws IOException {
