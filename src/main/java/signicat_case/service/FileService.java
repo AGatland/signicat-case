@@ -5,6 +5,7 @@ import java.time.LocalDate;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import signicat_case.util.FileArchiver;
@@ -24,6 +25,7 @@ public class FileService {
     @Autowired
     FileValidator fileValidator;
 
+    @Transactional
     public byte[] processFilesForZipping(MultipartFile[] files, String ipAddress) throws IOException {
         // Validate files before processing
         fileValidator.isFilesValid(files);
@@ -45,5 +47,5 @@ public class FileService {
 
         return zipFileBytes;
     }
-    
+
 }
